@@ -1,0 +1,47 @@
+﻿@{
+    Layout = "~/Views/Shared/_LoginLayout.cshtml";
+}
+
+
+<style>
+    .custom-error-message {
+        background-color: #f8d7da;
+        color: #721c24; 
+        padding: 15px; /* Spacing inside the alert box */
+        border: 1px solid #f5c6cb; /* Border around the box */
+        border-radius: 5px; 
+        font-size: 16px; 
+        margin-top: 150px; /* Space between the error box and other elements */
+        display: flex;
+        align-items: inherit;
+    }
+
+        .custom-error-message::before {
+            content: "⚠️ ";
+            margin-right: 5px; /* Space between the icon and the text */
+            font-size: 20px;
+        }
+
+    ul {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+    }
+
+</style>
+
+
+@using (Html.BeginForm("Login", "Account", FormMethod.Post))
+{
+    <div class="form-group">
+        @Html.Label("Username")
+        @Html.TextBox("username", null, new { @class = "form-control" })
+    </div>
+    <div class="form-group">
+        @Html.Label("Password")
+        @Html.Password("password", null, new { @class = "form-control" })
+    </div>
+    <button type="submit" class="btn btn-primary">Login</button>
+}
+
+@Html.ValidationSummary(true, "", new { @class = "alert alert-danger custom-error-message" })

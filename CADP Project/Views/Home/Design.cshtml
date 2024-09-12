@@ -1,0 +1,203 @@
+﻿@model IEnumerable<CADP_Project.Models.Fabric>
+@{
+    ViewBag.Title = "Design Your Apparel";
+}
+
+<h2>Select Fabric and Design Your Apparel</h2>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="fabric-selection">
+            <h4>Select a Fabric</h4>
+            <select id="fabricSelector" class="form-control">
+                @foreach (var fabric in Model)
+                {
+                    <option value="@fabric.FabricId" data-color="@fabric.Color">@fabric.FabricName - @fabric.Color</option>
+                }
+            </select>
+        </div>
+        <div id="toolbox" style="margin-top: 20px;">
+            <button id="drawBtn" class="btn btn-primary">Draw</button>
+            <button id="selectBtn" class="btn btn-primary">Select</button>
+            <button id="eraserBtn" class="btn btn-secondary">Eraser</button>
+            <button id="undoBtn" class="btn btn-warning">Undo</button>
+            <input type="color" id="colorPicker" value="#000000">
+            <input type="range" id="brushSize" min="1" max="50" value="10">
+            <button id="clearBtn" class="btn btn-danger">Clear Canvas</button>
+        </div>
+    </div>
+    <div class="col-md-9">
+        <input type="text" id="designName" class="form-control" placeholder="Enter Design Name" style="margin-bottom: 10px;">
+        <canvas id="designCanvas" width="500" height="500" style="border: 1px solid #000;"></canvas>
+        <button id="saveDesign" class="btn btn-success" style="margin-top: 20px;">Save Design</button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/fabric@5.2.1/dist/fabric.min.js"></script>
+<script>
+    if (typeof fabric === 'undefined') {
+        console.error('Fabric.js failed to load');
+    } else {
+        console.log('Fabric.js loaded successfully');
+    }
+
+    function initializeCanvas() {
+        
+        if (typeof fabric === 'undefined') {
+            console.error('Fabric.js is not loaded. Cannot initialize canvas.');
+            return;
+        }
+
+        var canvas = new fabric.Canvas('designCanvas', {
+            isDrawingMode: true
+        });
+
+        // Set up initial brush settings
+        var defaultColor = "#000000";
+        canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+        canvas.freeDrawingBrush.width = 10;
+        canvas.freeDrawingBrush.color = defaultColor;
+
+
+        // Set up tool buttons
+        var toolboxBtns = document.querySelectorAll('.toolbox-btn');
+        console.log(toolboxBtns);
+        toolboxBtns.forEach(function (btn) {
+            alert("button clicked");
+            btn.addEventListener('click', function () {
+                toolboxBtns.forEach(function (b) { b.style.border = ""; });
+                btn.style.border = "2px solid red";
+            });
+        });
+
+        // Undo stack
+        var undoStack = [];
+        canvas.on('object:added', function() {
+            undoStack.push(canvas.toJSON());
+        });
+
+        // Update fabric background color when fabric is selected
+        document.getElementById('fabricSelector').onchange = function() {
+            var selectedOption = this.options[this.selectedIndex];
+            var fabricColor = selectedOption.getAttribute('data-color');
+            canvas.setBackgroundColor(fabricColor, canvas.renderAll.bind(canvas));
+        };
+
+        // Tool functionality
+@*        document.getElementById('drawBtn').onclick = function() {
+            canvas.isDrawingMode = true;
+            canvas.freeDrawingBrush.color = document.getElementById('colorPicker').value || defaultColor;
+        };
+
+        document.getElementById('selectBtn').onclick = function() {
+            canvas.isDrawingMode = false;
+        };
+
+        document.getElementById('eraserBtn').onclick = function() {
+            canvas.isDrawingMode = true;
+            canvas.freeDrawingBrush.color = canvas.backgroundColor || "#ffffff";
+        };*@
+
+        function setActiveButton(activeBtn) {
+            var buttons = document.querySelectorAll('#toolbox button');
+            buttons.forEach(function (btn) {
+                btn.style.border = ""; // Reset border for all buttons
+            });
+            activeBtn.style.border = "2px solid red"; // Highlight the active button
+        }
+
+        document.getElementById('drawBtn').onclick = function () {
+            canvas.isDrawingMode = true;
+            canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+            canvas.freeDrawingBrush.width = parseInt(document.getElementById('brushSize').value, 10) || 10;
+            canvas.freeDrawingBrush.color = document.getElementById('colorPicker').value || defaultColor;
+            setActiveButton(this); // Highlight the draw button
+        };
+
+        document.getElementById('selectBtn').onclick = function () {
+            canvas.isDrawingMode = false;
+            setActiveButton(this); // Highlight the select button
+        };
+
+
+        // Eraser functionality
+        document.getElementById('eraserBtn').onclick = function () {
+            canvas.isDrawingMode = true;
+
+            // Set the drawing brush to match the background color, simulating an eraser
+            var backgroundColor = canvas.backgroundColor || "#ffffff"; // Default to white if no background is set
+            canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+            canvas.freeDrawingBrush.color = backgroundColor; // Use the background color as the "eraser"
+            canvas.freeDrawingBrush.width = parseInt(document.getElementById('brushSize').value, 10) || 10; // Set brush size
+
+            setActiveButton(this); // Highlight the eraser button
+        };
+
+
+
+
+        document.getElementById('undoBtn').onclick = function() {
+            if (undoStack.length > 0) {
+                undoStack.pop();
+                var lastState = undoStack[undoStack.length - 1];
+                canvas.loadFromJSON(lastState, canvas.renderAll.bind(canvas));
+            }
+        };
+
+        document.getElementById('colorPicker').onchange = function() {
+            canvas.freeDrawingBrush.color = this.value;
+        };
+
+        document.getElementById('brushSize').onchange = function () {
+            if (canvas.freeDrawingBrush) {
+                canvas.freeDrawingBrush.width = parseInt(this.value, 10) || 1;
+            }
+        };
+
+
+        document.getElementById('clearBtn').onclick = function () {
+            if (confirm('Are you sure you want to clear the canvas?')) {
+                canvas.clear();
+                var fabricColor = document.getElementById('fabricSelector').options[document.getElementById('fabricSelector').selectedIndex].getAttribute('data-color');
+                canvas.setBackgroundColor(fabricColor, canvas.renderAll.bind(canvas));
+            }
+        };
+
+        document.getElementById('saveDesign').onclick = function () {
+            var designName = document.getElementById('designName').value;
+            if (!designName.trim()) {
+                alert('Please enter a design name before saving.');
+                return;
+            }
+
+            var designData = JSON.stringify(canvas.toJSON());
+            var fabricId = document.getElementById('fabricSelector').value;
+            $.ajax({
+                url: '@Url.Action("SaveDesign", "Home")',
+                type: 'POST',
+                data: { designData: designData, fabricId: fabricId, designName: designName },
+                success: function (response) {
+                    if (response.success) {
+                        alert(response.message);
+                        isDesignModified = false;
+                    }
+                },
+                error: function () {
+                    alert('An error occurred while saving the design.');
+                }
+            });
+        };
+
+        // Set initial fabric color
+        var initialFabricColor = document.getElementById('fabricSelector').options[0].getAttribute('data-color');
+        canvas.setBackgroundColor(initialFabricColor, canvas.renderAll.bind(canvas));
+    }
+
+    // Wait for both the DOM and Fabric.js to load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeCanvas);
+    } else {
+        initializeCanvas();
+    }
+</script>
+

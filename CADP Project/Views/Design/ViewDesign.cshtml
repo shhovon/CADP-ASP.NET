@@ -1,0 +1,36 @@
+﻿@model CADP_Project.Controllers.DesignDetailViewModel
+
+@{
+    ViewBag.Title = "View Design";
+}
+
+<h2>@Model.DesignName</h2>
+
+<div>
+    <h4>Design Details</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>Fabric:</dt>
+        <dd>@Model.FabricName</dd>
+        <dt>Color:</dt>
+        <dd>@Model.FabricColor</dd>
+    </dl>
+</div>
+
+<canvas id="designCanvas" width="500" height="500" style="border:1px solid #000000;"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/fabric@5.2.1/dist/fabric.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof fabric === 'undefined') {
+                console.error('Fabric.js failed to load');
+            } else {
+                console.log('Fabric.js loaded successfully');
+            }
+
+            var canvas = new fabric.Canvas('designCanvas');
+            var designData = @Html.Raw(Model.DesignData);
+            canvas.loadFromJSON(designData, canvas.renderAll.bind(canvas));
+        });
+    </script>
+

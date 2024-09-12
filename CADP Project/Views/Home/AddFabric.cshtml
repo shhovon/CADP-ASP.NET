@@ -1,0 +1,127 @@
+﻿@model IEnumerable<CADP_Project.Models.Fabric>
+
+@{
+    ViewBag.Title = "Add Fabric";
+
+   @* <style>
+
+        #colorPicker {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 100px;
+            height: 50px;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+        }
+
+            #colorPicker::-webkit-color-swatch {
+                border-radius: 15px;
+                border: none;
+            }
+
+            #colorPicker::-moz-color-swatch {
+                border-radius: 15px;
+                border: none;
+            }
+    </style>*@
+}
+
+<h2>Add a New Fabric</h2>
+
+@using (Html.BeginForm("AddFabric", "Home", FormMethod.Post))
+{
+    <div class="form-group">
+        <label for="FabricName">Fabric Name:</label>
+        @Html.TextBox("FabricName", null, new { @class = "form-control", placeholder = "Enter fabric name" })
+        @Html.ValidationMessage("FabricName", "", new { @class = "text-danger" })
+    </div>
+
+    <div class="form-group">
+        <label for="Color">Color:</label>
+        <input type="color" id="colorPicker" value="#000000" class="form-control" style="width: 50px; display: inline-block;" /> or
+        @Html.TextBox("Color", null, new { @class = "form-control", placeholder = "Enter color", style = "display: inline-block; width: auto;" })
+        @Html.ValidationMessage("Color", "", new { @class = "text-danger" })
+    </div>
+
+    <div class="form-group">
+        <label for="Texture">Texture:</label>
+        @Html.TextBox("Texture", null, new { @class = "form-control", placeholder = "Enter texture" })
+        @Html.ValidationMessage("Texture", "", new { @class = "text-danger" })
+    </div>
+
+    <button type="submit" class="btn btn-primary">Add Fabric</button>
+
+    if (!string.IsNullOrEmpty(ViewBag.Message))
+    {
+        <div class="alert alert-success" role="alert">
+            @ViewBag.Message
+        </div>
+    }
+}
+<br />
+
+<!-- List of fabrics in a table with delete buttons -->
+<h3>Fabrics List</h3>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Fabric Name</th>
+            <th>Color</th>
+            <th>Texture</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var fabric in Model)
+        {
+            <tr id="row_@fabric.FabricId">
+                <td>@fabric.FabricName</td>
+                <td>@fabric.Color</td>
+                <td>@fabric.Texture</td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="deleteFabric(@fabric.FabricId)">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+
+    <script>
+        // Delete fabric function
+        function deleteFabric(fabricId) {
+            if (confirm('Are you sure you want to delete this fabric?')) {
+                $.ajax({
+                    url: '@Url.Action("DeleteFabric", "Home")',
+                    type: 'POST',
+                    data: { fabricId: fabricId },
+                    success: function (response) {
+                        if (response.success) {
+                            $('#row_' + fabricId).remove();
+                            alert(response.message);
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function () {
+                        alert('An error occurred while deleting the fabric.');
+                    }
+                });
+            }
+        }
+
+        // Sync the color picker with the text input field
+        $("#colorPicker").on("input", function () {
+            $("#Color").val($(this).val());
+        });
+
+        // Sync the text input field with the color picker
+        $("#Color").on("input", function () {
+            $("#colorPicker").val($(this).val());
+        });
+    </script>
+}

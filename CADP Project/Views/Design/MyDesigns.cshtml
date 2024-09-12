@@ -1,0 +1,138 @@
+﻿@model List<CADP_Project.Controllers.DesignViewModel>
+
+@{
+    ViewBag.Title = "My Designs";
+}
+
+<h2>My Designs</h2>
+
+<style>
+    #designDetailsSection .close-button {
+        top: 10px;
+        right: 10px;
+        font-size: 80px;
+        cursor: pointer;
+        color: #333;
+    }
+</style>
+
+@if (Model.Count == 0)
+{
+    <p>You haven't created any designs yet.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Design Name</th>
+                <th>Fabric</th>
+                <th>Color</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var design in Model)
+            {
+                <tr id="row_@design.DesignId">
+                    <td>@design.DesignName</td>
+                    <td>@design.FabricName</td>
+                    <td>@design.FabricColor</td>
+                    <td>
+                        <button class="btn btn-primary view-design" data-id="@design.DesignId">View</button>
+                        <button class="btn btn-danger" onclick="deleteDesign(@design.DesignId)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<p>
+    @Html.ActionLink("Create New Design", "Design", "Home", null, new { @class = "btn btn-success" })
+</p>
+
+<!-- Design Details Section -->
+<div id="designDetailsSection" style="display: none; margin-top: 20px;">
+@*    <span class="close-button" onclick="closeDesignDetails()">×</span>*@
+    <h4>Design Details</h4>
+    <dl class="row">
+        <dt class="col-sm-3">Design Name:</dt>
+        <dd class="col-sm-9" id="displayDesignName"></dd>
+        <dt class="col-sm-3">Fabric:</dt>
+        <dd class="col-sm-9" id="displayFabric"></dd>
+        <dt class="col-sm-3">Color:</dt>
+        <dd class="col-sm-9" id="displayColor"></dd>
+    </dl>
+    <canvas id="designCanvas" width="500" height="500" style="border:1px solid #000000;"></canvas>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script src="https://cdn.jsdelivr.net/npm/fabric@5.2.1/dist/fabric.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            console.log("Document ready");
+
+            $('.view-design').on('click', function() {
+                var designId = $(this).data('id');
+                console.log("View button clicked for design ID:", designId);
+                viewDesign(designId);
+            });
+
+            // Initialize the design details section as hidden
+            $('#designDetailsSection').hide();
+        });
+
+        function deleteDesign(designId) {
+            if (confirm('Are you sure you want to delete this design?')) {
+                $.ajax({
+                    url: '@Url.Action("DeleteDesign", "Design")',
+                    type: 'POST',
+                    data: { id: designId },
+                    success: function (response) {
+                        if (response.success) {
+                            $('#row_' + designId).remove();
+                            alert(response.message);
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function () {
+                        alert('An error occurred while deleting the design.');
+                    }
+                });
+            }
+        }
+
+        function closeDesignDetails() {
+            $('#designDetailsSection').hide();
+        }
+
+        function viewDesign(designId) {
+            console.log("viewDesign function called with ID:", designId);
+            $.ajax({
+                url: '@Url.Action("ViewDesign", "Design")',
+                type: 'GET',
+                data: { id: designId },
+                success: function (response) {
+                    console.log("AJAX success. Response:", response);
+                    $('#displayDesignName').text(response.DesignName);
+                    $('#displayFabric').text(response.FabricName);
+                    $('#displayColor').text(response.FabricColor);
+
+                    // Show the design details section
+                    $('#designDetailsSection').show();
+
+                    var canvas = new fabric.Canvas('designCanvas');
+                    canvas.loadFromJSON(response.DesignData, canvas.renderAll.bind(canvas));
+                },
+                error: function (xhr, status, error) {
+                    console.error("AJAX error:", status, error);
+                    alert('An error occurred while loading the design.');
+                }
+            });
+        }
+    </script>
+}
